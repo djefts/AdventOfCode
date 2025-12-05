@@ -11,7 +11,8 @@ import (
 
 func main() {
 	//path, _ := filepath.Abs("./test")
-	path, _ := filepath.Abs("./input")
+	path, _ := filepath.Abs("./test2")
+	//path, _ := filepath.Abs("./input")
 	input := helpers.ReadInput(path)
 	partOne(input)
 	fmt.Println()
@@ -54,7 +55,7 @@ func partOne(input []string) {
 	fmt.Println("Answer:", fresh)
 }
 
-func partTwo(input []string) {
+func partTwo(input []string) []string {
 	var ranges []string
 	for _, line := range input {
 		if line != "" {
@@ -64,20 +65,84 @@ func partTwo(input []string) {
 		}
 	}
 	fmt.Println("Fresh Ingredient Ranges:", ranges)
+	ranges = bubbleSort(ranges)
+	fmt.Println("Sorted Ingredient Ranges:", ranges)
 
-	unspoiled := make(map[int]struct{})
-	for _, fresh := range ranges {
-		splitRange := strings.SplitN(fresh, "-", 2)
+	unspoiled, diffs := cleanIntersections(ranges)
+	for diffs > 0 {
+		fmt.Printf("RECHECKING! There were %v overlaps\n", diffs)
+		unspoiled, diffs = cleanIntersections(unspoiled)
+	}
+
+	fmt.Println("Unspoiled ingredients:", unspoiled)
+	totalIngredients := 0
+	for _, rang := range unspoiled {
+		splitRange := strings.SplitN(rang, "-", 2)
 		start, _ := strconv.Atoi(splitRange[0])
 		end, _ := strconv.Atoi(splitRange[1])
-		fmt.Println("\tBuilding set for range:", start, "-", end)
-		for i := start; i <= end; i++ {
-			unspoiled[i] = struct{}{}
-			if i%5000000000 == 0 {
-				fmt.Println("\t\t", i)
+		totalIngredients += end - start + 1
+	}
+	fmt.Println("Answer:", totalIngredients)
+	return nil
+}
+
+func bubbleSort(input []string) []string {
+	n := len(input)
+	swapped := true
+
+	for swapped {
+		swapped = false
+		for i := 0; i < n-1; i++ {
+			splitCurr := strings.SplitN(input[i], "-", 2)
+			curr, _ := strconv.Atoi(splitCurr[0])
+			splitNext := strings.SplitN(input[i+1], "-", 2)
+			next, _ := strconv.Atoi(splitNext[0])
+			// Compare adjacent elements and swap if the first is greater than the second
+			if curr > next {
+				input[i], input[i+1] = input[i+1], input[i]
+				swapped = true
 			}
 		}
+		// After each pass, the largest unsorted element is in its correct place at the end
+		n--
 	}
-	fmt.Println("Unspoiled ingredients:", unspoiled)
-	fmt.Println("Answer:", len(unspoiled))
+	return input
+}
+
+func cleanIntersections(ranges []string) ([]string, int) {
+	var unspoiled []string
+	totalIntersections := 0
+iLoop:
+	for i := 0; i < len(ranges)-1; i++ {
+		intersections := 0
+		splitIRange := strings.SplitN(ranges[i], "-", 2)
+		iStart, _ := strconv.Atoi(splitIRange[0])
+		iEnd, _ := strconv.Atoi(splitIRange[1])
+		for j := i + 1; j < len(ranges); j++ {
+			splitJRange := strings.SplitN(ranges[j], "-", 2)
+			jStart, _ := strconv.Atoi(splitJRange[0])
+			jEnd, _ := strconv.Atoi(splitJRange[1])
+			// check for complete containment of I in J or J in I
+			if (iStart >= jStart && iEnd <= jEnd) || (jStart >= iStart && jEnd <= iEnd) {
+				continue iLoop
+			}
+			// check for intersection of range I with range J
+			if (iStart >= jStart && iStart <= jEnd) || (iEnd >= jStart && iEnd <= jEnd) {
+				newRange := fmt.Sprintf("%v-%v", min(iStart, jStart), max(iEnd, jEnd))
+				unspoiled = append(unspoiled, newRange)
+				intersections++
+			}
+		}
+		if intersections == 0 {
+			unspoiled = append(unspoiled, ranges[i])
+		} else {
+			totalIntersections += intersections
+			//fmt.Printf("\tFound %v overlaps\n", intersections)
+			//fmt.Printf("\tCurrent unspoiled ranges: %v\n", unspoiled)
+		}
+	}
+	if totalIntersections == 0 {
+		unspoiled = append(unspoiled, ranges[len(ranges)-1])
+	}
+	return unspoiled, totalIntersections
 }
