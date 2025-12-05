@@ -1,0 +1,10 @@
+go 1.25.4
+
+use (
+	day01
+	helpers
+	day02
+	day03
+	day04
+	day05
+)
