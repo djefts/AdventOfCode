@@ -12,8 +12,8 @@ import (
 
 func main() {
 	//path, _ := filepath.Abs("./test")
-  //path, _ := filepath.Abs("./test2")
-	path, _ := filepath.Abs("./input")
+    //path, _ := filepath.Abs("./test2")
+    path, _ := filepath.Abs("./input")
 	input := helpers.ReadInput(path)
 	partOne(input)
 	fmt.Println()
@@ -46,7 +46,7 @@ func partOne(input []string) {
 			splitRange := strings.SplitN(ingredientRange, "-", 2)
 			start, _ := strconv.Atoi(splitRange[0])
 			end, _ := strconv.Atoi(splitRange[1])
-			fmt.Println("\tChecking range:", start, "-", end)
+			//fmt.Println("\tChecking range:", start, "-", end)
 			if id >= start && id <= end {
 				fresh++
 				break
@@ -69,6 +69,7 @@ func partTwo(input []string) []string {
 	ranges = bubbleSort(ranges)
 	fmt.Println("Sorted Ingredient Ranges:", ranges)
 
+    fmt.Println("INITIAL CHECK!")
 	unspoiled, diffs := cleanIntersections(ranges)
 	for diffs > 0 {
 		fmt.Printf("RECHECKING! There were %v overlaps\n", diffs)
@@ -111,7 +112,6 @@ func bubbleSort(input []string) []string {
 }
 
 func cleanIntersections(ranges []string) ([]string, int) {
-	var unspoiled []string
 	totalIntersections := 0
 	for i := 0; i < len(ranges)-1; i++ {
 		intersections := 0
@@ -122,28 +122,19 @@ func cleanIntersections(ranges []string) ([]string, int) {
 			splitJRange := strings.SplitN(ranges[j], "-", 2)
 			jStart, _ := strconv.Atoi(splitJRange[0])
 			jEnd, _ := strconv.Atoi(splitJRange[1])
-			// check for complete containment of I in J or J in I
-			if iStart >= jStart && iEnd <= jEnd {
-				ranges = slices.Delete(ranges, i, i+1)
-				intersections++
-			}
-      if (iStart >= jStart && iStart <= jEnd) || (iEnd >= jStart && iEnd <= jEnd) {
-        // check for intersection of range I with range J
-				newRange := fmt.Sprintf("%v-%v", min(iStart, jStart), max(iEnd, jEnd))
-				unspoiled = append(unspoiled, newRange)
-				intersections++
-			}
-		}
-		if intersections == 0 {
-			unspoiled = append(unspoiled, ranges[i])
-		} else {
-			totalIntersections += intersections
-			//fmt.Printf("\tFound %v overlaps\n", intersections)
-			//fmt.Printf("\tCurrent unspoiled ranges: %v\n", unspoiled)
-		}
+            // check for intersection of range I with range J
+			if (iStart >= jStart && iStart <= jEnd) || (iEnd >= jStart && iEnd <= jEnd) || (jStart >= iStart && jStart <= iEnd) || (jEnd >= iStart && jEnd <= iEnd) {
+			    // calculate the new range
+                newRange := fmt.Sprintf("%v-%v", min(iStart, jStart), max(iEnd, jEnd))
+                ranges[i] = newRange
+                // delete the intersecting range
+                ranges = slices.Delete(ranges, j, j+1)
+                // track
+                intersections++
+            }
+        }
+        totalIntersections += intersections
+        fmt.Printf("\tFound %v overlaps with range %v\n", intersections, splitIRange)
 	}
-	if totalIntersections == 0 {
-		unspoiled = append(unspoiled, ranges[len(ranges)-1])
-	}
-	return unspoiled, totalIntersections
+	return ranges, totalIntersections
 }
