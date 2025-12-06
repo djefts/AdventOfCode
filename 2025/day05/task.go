@@ -5,14 +5,15 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"slices"
 
 	"helpers"
 )
 
 func main() {
 	//path, _ := filepath.Abs("./test")
-	path, _ := filepath.Abs("./test2")
-	//path, _ := filepath.Abs("./input")
+  //path, _ := filepath.Abs("./test2")
+	path, _ := filepath.Abs("./input")
 	input := helpers.ReadInput(path)
 	partOne(input)
 	fmt.Println()
@@ -112,7 +113,6 @@ func bubbleSort(input []string) []string {
 func cleanIntersections(ranges []string) ([]string, int) {
 	var unspoiled []string
 	totalIntersections := 0
-iLoop:
 	for i := 0; i < len(ranges)-1; i++ {
 		intersections := 0
 		splitIRange := strings.SplitN(ranges[i], "-", 2)
@@ -123,11 +123,12 @@ iLoop:
 			jStart, _ := strconv.Atoi(splitJRange[0])
 			jEnd, _ := strconv.Atoi(splitJRange[1])
 			// check for complete containment of I in J or J in I
-			if (iStart >= jStart && iEnd <= jEnd) || (jStart >= iStart && jEnd <= iEnd) {
-				continue iLoop
+			if iStart >= jStart && iEnd <= jEnd {
+				ranges = slices.Delete(ranges, i, i+1)
+				intersections++
 			}
-			// check for intersection of range I with range J
-			if (iStart >= jStart && iStart <= jEnd) || (iEnd >= jStart && iEnd <= jEnd) {
+      if (iStart >= jStart && iStart <= jEnd) || (iEnd >= jStart && iEnd <= jEnd) {
+        // check for intersection of range I with range J
 				newRange := fmt.Sprintf("%v-%v", min(iStart, jStart), max(iEnd, jEnd))
 				unspoiled = append(unspoiled, newRange)
 				intersections++
